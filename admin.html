@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة إدارة متجر تولين | الاحترافية الكاملة</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #121212; --card: #1e1e1e; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg); color: #fff; margin: 0; padding: 0; }
+        .banner { width: 100%; height: 200px; background: linear-gradient(rgba(18,18,18,0.7), rgba(18,18,18,0.98)), url('33744.jpg') center/cover; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 3px solid var(--gold); }
+        .banner img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--gold); }
+        .banner h1 { margin: 8px 0 0 0; font-size: 20px; color: var(--gold); }
+        .container { max-width: 500px; margin: -20px auto 40px auto; background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); border: 1px solid #2a2a2a; box-sizing: border-box; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #ccc; }
+        input, select { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #252525; color: #fff; box-sizing: border-box; font-size: 15px; }
+        input:focus, select:focus { border-color: var(--gold); outline: none; }
+        .file-wrapper { position: relative; background: #252525; border: 2px dashed #444; padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; }
+        .file-wrapper input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        button { width: 100%; padding: 14px; background: linear-gradient(45deg, #b89227, var(--gold)); border: none; color: black; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 15px; }
+        .status { text-align: center; margin-top: 12px; font-weight: bold; color: #ffeb3b; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <img src="33744.jpg" alt="Logo">
+    <h1>لوحة إدارة المنتجات الحية</h1>
+</div>
+
+<div class="container">
+    <div class="form-group">
+        <label>اسم الهدية الفاخرة:</label>
+        <input type="text" id="prodName" placeholder="مثال: صندوق ورد تولين الملكي">
+    </div>
+
+    <div class="form-group">
+        <label>السعر (بالرقم فقط):</label>
+        <input type="number" id="prodPrice" placeholder="مثال: 150">
+    </div>
+
+    <div class="form-group">
+        <label>القسم المخصص:</label>
+        <select id="prodCategory">
+            <option value="مجات">مجات</option>
+            <option value="باقات">باقات</option>
+            <option value="صناديق">صناديق هدايا</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>ألبوم صور المنتج (يمكنك اختيار عدة صور معاً 📸):</label>
+        <div class="file-wrapper">
+            <span id="fileLabel">اضغط هنا لفتح استوديو الهاتف واختيار صورك</span>
+            <input type="file" id="prodImages" accept="image/*" multiple onchange="updateLabel()">
+        </div>
+    </div>
+
+    <button onclick="publishProduct()">🚀 نشر المنتج بالصور المتعددة فوراً</button>
+    <div class="status" id="uploadStatus"></div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://dlxhdakozhmdvuheizpu.supabase.co";
+    const SUPABASE_ANON_KEY = "Sb_publishable_uXigsty0Sqih9oRFm0jCgw_2Hxs3jx3";
+
+    function updateLabel() {
+        const count = document.getElementById('prodImages').files.length;
+        document.getElementById('fileLabel').textContent = count > 0 ? `📸 تم اختيار ${count} صور بنجاح` : "اضغط هنا لفتح استوديو الهاتف واختيار صورك";
+    }
+
+    async function publishProduct() {
+        const name = document.getElementById('prodName').value;
+        const price = document.getElementById('prodPrice').value;
+        const category = document.getElementById('prodCategory').value;
+        const imageFiles = document.getElementById('prodImages').files;
+        const statusDiv = document.getElementById('uploadStatus');
+
+        if (!name || !price || imageFiles.length === 0) {
+            statusDiv.textContent = "❌ يرجى تعبئة الحقول واختيار صورة واحدة على الأقل!";
+            return;
+        }
+
+        statusDiv.textContent = "⏳ جاري رفع ألبوم الصور إلى السحابة الآمنة...";
+        let uploadedUrls = [];
+
+        try {
+            for (let i = 0; i < imageFiles.length; i++) {
+                const file = imageFiles[i];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${i}.${fileExt}`;
+
+                statusDiv.textContent = `⏳ جاري رفع صورة (${i + 1} من ${imageFiles.length})...`;
+
+                const uploadResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/gift-images/${fileName}`, {
+                    method: "POST",
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                        "Content-Type": file.type
+                    },
+                    body: file
+                });
+
+                if (!uploadResponse.ok) throw new Error("فشل رفع الملف");
+
+                const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/gift-images/${fileName}`;
+                uploadedUrls.push(imageUrl);
+            }
+
+            statusDiv.textContent = "⏳ يتم الآن ربط وحفظ الهدية بالواجهة الرئيسية...";
+
+            const dbResponse = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: name,
+                    price: parseInt(price),
+                    image_url: uploadedUrls, // إرسال مصفوفة الروابط الكاملة
+                    category: category
+                })
+            });
+
+            if (dbResponse.ok) {
+                statusDiv.style.color = "#4CAF50";
+                statusDiv.textContent = "🎉 عمل مبهر! تم نشر الهدية بنجاح وربطها بالمتجر.";
+                document.getElementById('prodName').value = '';
+                document.getElementById('prodPrice').value = '';
+                document.getElementById('prodImages').value = '';
+                document.getElementById('fileLabel').textContent = "اضغط هنا لفتح استوديو الهاتف واختيار صورك";
+            } else {
+                throw new Error("فشل الحفظ بالجدول");
+            }
+        } catch (error) {
+            console.error(error);
+            statusDiv.style.color = "#f44336";
+            statusDiv.textContent = "❌ واجهنا مشكلة أثناء النشر الخارجي، حاول مجدداً.";
+        }
+    }
+</script>
+</body>
+</html>
